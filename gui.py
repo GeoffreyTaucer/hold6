@@ -30,20 +30,23 @@ class App:
         self.input_goal.grid(column=1, row=0, sticky="E")
         self.label_seconds.grid(column=2, row=0, sticky="W")
 
-        self.checkbox_ding = ttk.Button(self.control_frame, text="Ding for successful hold", state="disabled")
+        self.checkbox_ding = ttk.Checkbutton(self.control_frame, text="Ding for successful hold", state="disabled")
         self.checkbox_ding.grid(row=1, column=0, sticky="W")
 
+        self.checkbox_video_out = ttk.Checkbutton(self.control_frame, text="Output video", state="disabled")
+        self.checkbox_video_out.grid(row=2, column=0, sticky="W")
+
         self.button_detect = ttk.Button(self.control_frame, text="Start detection", state="disabled")
-        self.button_detect.grid(row=2, column=0, sticky="W")
+        self.button_detect.grid(row=3, column=0, sticky="W")
 
         self.button_calibrate = ttk.Button(self.control_frame, text="Calibrate", state="disabled")
-        self.button_calibrate.grid(row=3, column=0, sticky="W")
+        self.button_calibrate.grid(row=4, column=0, sticky="W")
 
         self.button_exit = ttk.Button(self.control_frame, text="Exit program", command=exit)
-        self.button_exit.grid(row=4, column=0, sticky="W")
+        self.button_exit.grid(row=5, column=0, sticky="W")
 
         self.label_status = ttk.Label(self.control_frame, text="")
-        self.label_status.grid(row=5, column=0, sticky="W")
+        self.label_status.grid(row=6, column=0, sticky="W")
 
         self.delay = 16
         self.update_video()
