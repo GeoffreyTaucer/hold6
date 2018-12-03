@@ -9,6 +9,7 @@ class App:
     def __init__(self, root, window_title, video_source=0):
         self.root = root
         self.root.title(window_title)
+        self.detecting = False
         self.video_source = video_source
 
         self.vid = VideoCapture(video_source)
@@ -36,7 +37,7 @@ class App:
         self.checkbox_video_out = ttk.Checkbutton(self.control_frame, text="Output video", state="disabled")
         self.checkbox_video_out.grid(row=2, column=0, sticky="W")
 
-        self.button_detect = ttk.Button(self.control_frame, text="Start detection", state="disabled")
+        self.button_detect = ttk.Button(self.control_frame, text="Start detection", command=self.detector_switch)
         self.button_detect.grid(row=3, column=0, sticky="W")
 
         self.button_calibrate = ttk.Button(self.control_frame, text="Calibrate", state="disabled")
@@ -48,14 +49,45 @@ class App:
         self.label_status = ttk.Label(self.control_frame, text="")
         self.label_status.grid(row=6, column=0, sticky="W")
 
+        self.ref_frame = None
+        self.non_ref_frames = 0
+        self.hold_frames = 0
+
         self.delay = 16
         self.update_video()
 
         self.root.mainloop()
 
+    def detector_switch(self):
+        self.detecting = not self.detecting
+        if self.detecting:
+            self.button_detect.configure(text="Stop detection")
+
+        else:
+            self.ref_frame = None
+            self.non_ref_frames = 0
+            self.hold_frames = 0
+            self.button_detect.configure(text="Start detection")
+
+    def is_hold(self, cur_frame, ref_frame):
+        return False
+
     def update_video(self):
         frame = self.vid.get_frame()
+        if frame is None:
+            self.detecting = False
+            return
+
         self.image = PIL.ImageTk.PhotoImage(image=PIL.Image.fromarray(frame))
+
+        if self.detecting:
+
+            if not 0 < self.non_ref_frames <= 3:
+                self.ref_frame = self.image
+
+            if self.is_hold(self.image, self.ref_frame):
+                self.hold_frames += 1
+
         self.display_canvas.create_image(0, 0, image=self.image, anchor="nw")
 
         self.root.after(self.delay, self.update_video)
