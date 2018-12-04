@@ -3,6 +3,7 @@ from tkinter import ttk
 import cv2 as cv
 import PIL.Image
 import PIL.ImageTk
+import detector
 
 
 class App:
@@ -10,9 +11,13 @@ class App:
         self.root = root
         self.root.title(window_title)
         self.detecting = False
+        self.image = None
         self.video_source = video_source
 
         self.vid = VideoCapture(video_source)
+        self.f1 = cv.cvtColor(self.vid.get_frame(), cv.COLOR_BGR2GRAY)
+        self.f2 = cv.cvtColor(self.vid.get_frame(), cv.COLOR_BGR2GRAY)
+        self.f3 = cv.cvtColor(self.vid.get_frame(), cv.COLOR_BGR2GRAY)
 
         self.display_frame = ttk.Frame(self.root, borderwidth=2, relief="groove")
         self.display_frame.grid(row=0, column=1)
@@ -49,10 +54,6 @@ class App:
         self.label_status = ttk.Label(self.control_frame, text="")
         self.label_status.grid(row=6, column=0, sticky="W")
 
-        self.ref_frame = None
-        self.non_ref_frames = 0
-        self.hold_frames = 0
-
         self.delay = 16
         self.update_video()
 
@@ -64,13 +65,7 @@ class App:
             self.button_detect.configure(text="Stop detection")
 
         else:
-            self.ref_frame = None
-            self.non_ref_frames = 0
-            self.hold_frames = 0
             self.button_detect.configure(text="Start detection")
-
-    def is_hold(self, cur_frame, ref_frame):
-        return False
 
     def update_video(self):
         frame = self.vid.get_frame()
@@ -80,13 +75,13 @@ class App:
 
         self.image = PIL.ImageTk.PhotoImage(image=PIL.Image.fromarray(frame))
 
-        if self.detecting:
-
-            if not 0 < self.non_ref_frames <= 3:
-                self.ref_frame = self.image
-
-            if self.is_hold(self.image, self.ref_frame):
-                self.hold_frames += 1
+        # if self.detecting:
+        #
+        #     if not 0 < self.non_ref_frames <= 3:
+        #         self.ref_frame = self.image
+        #
+        #     if self.is_hold(self.image, self.ref_frame):
+        #         self.hold_frames += 1
 
         self.display_canvas.create_image(0, 0, image=self.image, anchor="nw")
 
