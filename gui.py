@@ -78,10 +78,14 @@ class App:
             self.detecting = False
             return
 
+        self.f1 = self.f2
+        self.f2 = self.f3
+        self.f3 = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+
         self.image = PIL.ImageTk.PhotoImage(image=PIL.Image.fromarray(frame))
 
-        # if self.detecting:
-        #     perform detection
+        if self.detecting:
+            detector.detector_main(self.f1, self.f2, self.f3, self.hold_goal)
 
         self.display_canvas.create_image(0, 0, image=self.image, anchor="nw")
 
