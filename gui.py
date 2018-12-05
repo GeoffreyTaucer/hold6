@@ -12,6 +12,7 @@ class App:
         self.root.title(window_title)
         self.detecting = False
         self.image = None
+        self.hold_goal = 0
         self.video_source = video_source
 
         self.vid = VideoCapture(video_source)
@@ -59,9 +60,13 @@ class App:
 
         self.root.mainloop()
 
+    def set_hold_goal(self):
+        self.hold_goal = self.input_goal.get()
+
     def detector_switch(self):
         self.detecting = not self.detecting
         if self.detecting:
+            self.set_hold_goal()
             self.button_detect.configure(text="Stop detection")
 
         else:
@@ -76,12 +81,7 @@ class App:
         self.image = PIL.ImageTk.PhotoImage(image=PIL.Image.fromarray(frame))
 
         # if self.detecting:
-        #
-        #     if not 0 < self.non_ref_frames <= 3:
-        #         self.ref_frame = self.image
-        #
-        #     if self.is_hold(self.image, self.ref_frame):
-        #         self.hold_frames += 1
+        #     perform detection
 
         self.display_canvas.create_image(0, 0, image=self.image, anchor="nw")
 
