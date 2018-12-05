@@ -12,10 +12,14 @@ class App:
         self.root.title(window_title)
         self.detecting = False
         self.image = None
-        self.thresh = 100
+        self.thresh = 10
         self.hold_goal = False
         self.hold_start = False
         self.hold_time = False
+        self.hold_frames = 0
+        self.no_hold_frames = 0
+        self.holding = False
+
         self.video_source = video_source
 
         self.vid = VideoCapture(video_source)
@@ -92,7 +96,6 @@ class App:
 
         if self.detecting:
             self.detector_main()
-            pass
 
         self.display_canvas.create_image(0, 0, image=self.image, anchor="nw")
 
@@ -103,20 +106,29 @@ class App:
 
         if hold:
             self.label_status.configure(text="Holding")
+            self.hold_frames += 1
 
         else:
             self.label_status.configure(text="Moving")
+            self.no_hold_frames += 1
 
-        if hold and not self.hold_start:
+        if self.hold_frames == 5:
+            self.no_hold_frames = 0
+            self.holding = True
+
+        elif self.no_hold_frames == 5:
+            self.hold_frames = 0
+            self.holding = False
+
+        if self.holding and not self.hold_start:
             self.hold_start = time()
-            return
 
-        elif hold and self.hold_start:
+        elif self.holding and self.hold_start:
             self.hold_time = time() - self.hold_start
             self.hold_time = round(self.hold_time, 1)
             self.label_hold_time.configure(text=str(self.hold_time))
 
-        elif not hold and self.hold_time:
+        elif not self.holding and self.hold_time:
             self.hold_start = 0
             self.hold_time = 0
 
