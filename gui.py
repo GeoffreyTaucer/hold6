@@ -3,7 +3,7 @@ from tkinter import ttk
 import cv2 as cv
 import PIL.Image
 import PIL.ImageTk
-import detector
+from time import time
 
 
 class App:
@@ -12,7 +12,10 @@ class App:
         self.root.title(window_title)
         self.detecting = False
         self.image = None
-        self.hold_goal = 0
+        self.thresh = 100
+        self.hold_goal = False
+        self.hold_start = False
+        self.hold_time = False
         self.video_source = video_source
 
         self.vid = VideoCapture(video_source)
@@ -55,6 +58,9 @@ class App:
         self.label_status = ttk.Label(self.control_frame, text="")
         self.label_status.grid(row=6, column=0, sticky="W")
 
+        self.label_hold_time = ttk.Label(self.control_frame, text="")
+        self.label_hold_time.grid(row=7, column=0, sticky="W")
+
         self.delay = 16
         self.update_video()
 
@@ -85,11 +91,43 @@ class App:
         self.image = PIL.ImageTk.PhotoImage(image=PIL.Image.fromarray(frame))
 
         if self.detecting:
-            detector.detector_main(self.f1, self.f2, self.f3, self.hold_goal)
+            self.detector_main()
+            pass
 
         self.display_canvas.create_image(0, 0, image=self.image, anchor="nw")
 
         self.root.after(self.delay, self.update_video)
+
+    def detector_main(self):
+        hold = self.is_hold()
+
+        if hold:
+            self.label_status.configure(text="Holding")
+
+        else:
+            self.label_status.configure(text="Moving")
+
+        if hold and not self.hold_start:
+            self.hold_start = time()
+            return
+
+        elif hold and self.hold_start:
+            self.hold_time = time() - self.hold_start
+            self.hold_time = round(self.hold_time, 1)
+            self.label_hold_time.configure(text=str(self.hold_time))
+
+        elif not hold and self.hold_time:
+            self.hold_start = 0
+            self.hold_time = 0
+
+    def is_hold(self):
+        d1 = cv.absdiff(self.f3, self.f2)
+        d2 = cv.absdiff(self.f2, self.f3)
+        total_diff = cv.countNonZero(cv.bitwise_and(d1, d2))
+        return total_diff > self.thresh
+
+    def add_overlay(self):
+        pass
 
 
 class VideoCapture:
