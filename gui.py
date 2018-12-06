@@ -4,6 +4,7 @@ import cv2 as cv
 import PIL.Image
 import PIL.ImageTk
 from time import time
+from statistics import stdev
 
 
 class App:
@@ -13,12 +14,12 @@ class App:
         self.detecting = False
         self.image = None
         self.thresh = 220000
-        self.hold_goal = False
-        self.hold_start = False
-        self.hold_time = False
+        self.hold_goal = 0
+        self.hold_start = 0
+        self.hold_time = 0
         self.hold_frames = 0
         self.no_hold_frames = 0
-        self.holding = False
+        self.holding = 0
 
         self.video_source = video_source
 
@@ -53,7 +54,7 @@ class App:
         self.button_detect = ttk.Button(self.control_frame, text="Start detection", command=self.detector_switch)
         self.button_detect.grid(row=3, column=0, sticky="W")
 
-        self.button_calibrate = ttk.Button(self.control_frame, text="Calibrate", state="disabled")
+        self.button_calibrate = ttk.Button(self.control_frame, text="Calibrate", command=self.calibrate)
         self.button_calibrate.grid(row=4, column=0, sticky="W")
 
         self.button_exit = ttk.Button(self.control_frame, text="Exit program", command=exit)
@@ -62,8 +63,8 @@ class App:
         self.label_status = ttk.Label(self.control_frame, text="")
         self.label_status.grid(row=6, column=0, sticky="W")
 
-        self.label_hold_time = ttk.Label(self.control_frame, text="")
-        self.label_hold_time.grid(row=7, column=0, sticky="W")
+        self.label_hold_time = tkinter.Label(self.control_frame, text="", font=("", 48))
+        self.label_hold_time.grid(row=7, column=0)
 
         self.delay = 16
         self.update_video()
@@ -71,7 +72,11 @@ class App:
         self.root.mainloop()
 
     def set_hold_goal(self):
-        self.hold_goal = self.input_goal.get()
+        try:
+            self.hold_goal = int(self.input_goal.get())
+
+        except Exception:
+            self.hold_goal = 0
 
     def detector_switch(self):
         self.detecting = not self.detecting
@@ -81,6 +86,15 @@ class App:
 
         else:
             self.button_detect.configure(text="Start detection")
+            self.reset()
+
+    def reset(self):
+        self.hold_goal = 0
+        self.hold_start = 0
+        self.hold_time = 0
+        self.hold_frames = 0
+        self.no_hold_frames = 0
+        self.holding = 0
 
     def update_video(self):
         frame = self.vid.get_frame()
@@ -105,18 +119,16 @@ class App:
         hold = self.is_hold()
 
         if hold:
-            # self.label_status.configure(text="Holding")
             self.hold_frames += 1
 
         else:
-            # self.label_status.configure(text="Moving")
             self.no_hold_frames += 1
 
-        if self.hold_frames == 5:
+        if self.hold_frames == 10:
             self.no_hold_frames = 0
             self.holding = True
 
-        elif self.no_hold_frames == 5:
+        elif self.no_hold_frames == 10:
             self.hold_frames = 0
             self.holding = False
 
@@ -126,18 +138,48 @@ class App:
         elif self.holding and self.hold_start:
             self.hold_time = time() - self.hold_start
             self.hold_time = round(self.hold_time, 1)
+
+            # if self.hold_time >= self.hold_goal:
+            #     color = "green"
+            # else:
+            #     color = "red"
+
             self.label_hold_time.configure(text=str(self.hold_time))
 
         elif not self.holding and self.hold_time:
-            self.hold_start = 0
-            self.hold_time = 0
+            self.reset()
+
+    def calibrate(self):
+        cal_wait = time()
+
+        while time() - cal_wait < 3:
+            time_til_cal = 5 - (time() - cal_wait)
+            self.label_status.configure(text=f"Calibration starting in {round(time_til_cal)} seconds. "
+                                             "Please clear the video area.")
+
+        calibrating = "Calibrating"
+        cal_start = time()
+        cal_values = []
+
+        while time() - cal_start < 2:
+            cal_values.append(self.get_total_diff())
+            self.label_status.configure(text=calibrating)
+
+        avg_diff = sum(cal_values)/len(cal_values)
+        stand_dev = stdev(cal_values)
+
+        self.thresh = round(avg_diff + stand_dev)
+        self.label_status.configure(text=f"Calibrated. Threshold set at {self.thresh}")
 
     def is_hold(self):
-        d1 = cv.absdiff(self.f3, self.f2)
-        d2 = cv.absdiff(self.f2, self.f3)
-        total_diff = cv.countNonZero(cv.bitwise_and(d1, d2))
+        total_diff = self.get_total_diff()
         self.label_status.configure(text=str(total_diff))
         return total_diff < self.thresh
+
+    def get_total_diff(self):
+        d1 = cv.absdiff(self.f3, self.f2)
+        d2 = cv.absdiff(self.f2, self.f3)
+        return cv.countNonZero(cv.bitwise_and(d1, d2))
 
     def add_overlay(self):
         pass
