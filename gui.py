@@ -12,7 +12,7 @@ class App:
         self.root.title(window_title)
         self.detecting = False
         self.image = None
-        self.thresh = 10
+        self.thresh = 220000
         self.hold_goal = False
         self.hold_start = False
         self.hold_time = False
@@ -105,11 +105,11 @@ class App:
         hold = self.is_hold()
 
         if hold:
-            self.label_status.configure(text="Holding")
+            # self.label_status.configure(text="Holding")
             self.hold_frames += 1
 
         else:
-            self.label_status.configure(text="Moving")
+            # self.label_status.configure(text="Moving")
             self.no_hold_frames += 1
 
         if self.hold_frames == 5:
@@ -136,7 +136,8 @@ class App:
         d1 = cv.absdiff(self.f3, self.f2)
         d2 = cv.absdiff(self.f2, self.f3)
         total_diff = cv.countNonZero(cv.bitwise_and(d1, d2))
-        return total_diff > self.thresh
+        self.label_status.configure(text=str(total_diff))
+        return total_diff < self.thresh
 
     def add_overlay(self):
         pass
