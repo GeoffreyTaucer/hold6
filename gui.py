@@ -13,13 +13,14 @@ class App:
         self.root.title(window_title)
         self.detecting = False
         self.image = None
-        self.thresh = 220000
+        self.thresh = 261000
         self.hold_goal = 0
         self.hold_start = 0
         self.hold_time = 0
         self.hold_frames = 0
         self.no_hold_frames = 0
         self.holding = 0
+        # self.color = "red"
 
         self.video_source = video_source
 
@@ -63,7 +64,7 @@ class App:
         self.label_status = ttk.Label(self.control_frame, text="")
         self.label_status.grid(row=6, column=0, sticky="W")
 
-        self.label_hold_time = tkinter.Label(self.control_frame, text="", font=("", 48))
+        self.label_hold_time = tkinter.Label(self.control_frame, text="", font=("", 96))
         self.label_hold_time.grid(row=7, column=0)
 
         self.delay = 16
@@ -95,6 +96,7 @@ class App:
         self.hold_frames = 0
         self.no_hold_frames = 0
         self.holding = 0
+        # self.color = "red"
 
     def update_video(self):
         frame = self.vid.get_frame()
@@ -139,12 +141,12 @@ class App:
             self.hold_time = time() - self.hold_start
             self.hold_time = round(self.hold_time, 1)
 
-            # if self.hold_time >= self.hold_goal:
-            #     color = "green"
-            # else:
-            #     color = "red"
-
-            self.label_hold_time.configure(text=str(self.hold_time))
+            # self.color = "red"
+            #
+            # if self.hold_time > self.hold_goal:
+            #     self.color = "green"
+            #
+            # self.label_hold_time.configure(text=str(self.hold_time), fg=self.color)
 
         elif not self.holding and self.hold_time:
             self.reset()
