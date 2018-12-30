@@ -4,6 +4,7 @@ import cv2 as cv
 import PIL.Image
 import PIL.ImageTk
 from time import time
+from playsound import playsound
 # from statistics import stdev
 
 
@@ -20,6 +21,7 @@ class App:
         self.hold_frames = 0
         self.no_hold_frames = 0
         self.holding = 0
+        self.played_ding = False
         # self.color = "red"
 
         self.video_source = video_source
@@ -96,6 +98,7 @@ class App:
         self.hold_frames = 0
         self.no_hold_frames = 0
         self.holding = 0
+        self.played_ding = False
         # self.color = "red"
 
     def update_video(self):
@@ -116,6 +119,10 @@ class App:
         self.display_canvas.create_image(0, 0, image=self.image, anchor="nw")
 
         self.root.after(self.delay, self.update_video)
+
+    def playding(self):
+        playsound("ding.mp3")
+        self.played_ding = True
 
     def detector_main(self): # need to rework this; check for consecutive frames is probably no longer necessary
         hold = self.is_hold()
@@ -140,6 +147,8 @@ class App:
         elif self.holding and self.hold_start:
             self.hold_time = time() - self.hold_start
             self.hold_time = round(self.hold_time, 1)
+            # if self.hold_time >= self.hold_goal and not self.played_ding:
+            #     self.playding()
 
             # self.color = "red"
             #
