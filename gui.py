@@ -4,7 +4,7 @@ import cv2 as cv
 import PIL.Image
 import PIL.ImageTk
 from time import time
-from statistics import stdev
+# from statistics import stdev
 
 
 class App:
@@ -13,7 +13,7 @@ class App:
         self.root.title(window_title)
         self.detecting = False
         self.image = None
-        self.thresh = 261000
+        self.thresh = 500
         self.hold_goal = 0
         self.hold_start = 0
         self.hold_time = 0
@@ -55,7 +55,7 @@ class App:
         self.button_detect = ttk.Button(self.control_frame, text="Start detection", command=self.detector_switch)
         self.button_detect.grid(row=3, column=0, sticky="W")
 
-        self.button_calibrate = ttk.Button(self.control_frame, text="Calibrate", command=self.calibrate)
+        self.button_calibrate = ttk.Button(self.control_frame, text="Calibrate", state="disabled")
         self.button_calibrate.grid(row=4, column=0, sticky="W")
 
         self.button_exit = ttk.Button(self.control_frame, text="Exit program", command=exit)
@@ -117,7 +117,7 @@ class App:
 
         self.root.after(self.delay, self.update_video)
 
-    def detector_main(self):
+    def detector_main(self): # need to rework this; check for consecutive frames is probably no longer necessary
         hold = self.is_hold()
 
         if hold:
@@ -126,11 +126,11 @@ class App:
         else:
             self.no_hold_frames += 1
 
-        if self.hold_frames == 10:
+        if self.hold_frames == 5:
             self.no_hold_frames = 0
             self.holding = True
 
-        elif self.no_hold_frames == 10:
+        elif self.no_hold_frames == 5:
             self.hold_frames = 0
             self.holding = False
 
@@ -146,32 +146,32 @@ class App:
             # if self.hold_time > self.hold_goal:
             #     self.color = "green"
             #
-            # self.label_hold_time.configure(text=str(self.hold_time), fg=self.color)
+            self.label_hold_time.configure(text=str(self.hold_time))
 
         elif not self.holding and self.hold_time:
             self.reset()
 
-    def calibrate(self):
-        cal_wait = time()
-
-        while time() - cal_wait < 3:
-            time_til_cal = 5 - (time() - cal_wait)
-            self.label_status.configure(text=f"Calibration starting in {round(time_til_cal)} seconds. "
-                                             "Please clear the video area.")
-
-        calibrating = "Calibrating"
-        cal_start = time()
-        cal_values = []
-
-        while time() - cal_start < 2:
-            cal_values.append(self.get_total_diff())
-            self.label_status.configure(text=calibrating)
-
-        avg_diff = sum(cal_values)/len(cal_values)
-        stand_dev = stdev(cal_values)
-
-        self.thresh = round(avg_diff + stand_dev)
-        self.label_status.configure(text=f"Calibrated. Threshold set at {self.thresh}")
+    # def calibrate(self): # works, but with issues. status display doesn't update, callibration is questionable
+    #     cal_wait = time()
+    #
+    #     while time() - cal_wait < 3:
+    #         time_til_cal = 5 - (time() - cal_wait)
+    #         self.label_status.configure(text=f"Calibration starting in {round(time_til_cal)} seconds. "
+    #                                          "Please clear the video area.")
+    #
+    #     calibrating = "Calibrating"
+    #     cal_start = time()
+    #     cal_values = []
+    #
+    #     while time() - cal_start < 2:
+    #         cal_values.append(self.get_total_diff())
+    #         self.label_status.configure(text=calibrating)
+    #
+    #     avg_diff = sum(cal_values)/len(cal_values)
+    #     stand_dev = stdev(cal_values)
+    #
+    #     self.thresh = round(avg_diff + stand_dev)
+    #     self.label_status.configure(text=f"Calibrated. Threshold set at {self.thresh}")
 
     def is_hold(self):
         total_diff = self.get_total_diff()
@@ -181,7 +181,10 @@ class App:
     def get_total_diff(self):
         d1 = cv.absdiff(self.f3, self.f2)
         d2 = cv.absdiff(self.f2, self.f3)
-        return cv.countNonZero(cv.bitwise_and(d1, d2))
+        bit_and = cv.bitwise_and(d1, d2)
+        _, thresh_bin = cv.threshold(bit_and, 32, 255, cv.THRESH_BINARY)
+        # cv.imshow("Test", thresh_bin)
+        return cv.countNonZero(thresh_bin)
 
     def add_overlay(self):
         pass
