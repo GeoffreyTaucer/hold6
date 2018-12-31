@@ -5,7 +5,7 @@ import PIL.Image
 import PIL.ImageTk
 from time import time
 from playsound import playsound
-# from statistics import stdev
+from threading import Thread
 
 
 class App:
@@ -92,14 +92,12 @@ class App:
             self.reset()
 
     def reset(self):
-        self.hold_goal = 0
         self.hold_start = 0
         self.hold_time = 0
         self.hold_frames = 0
         self.no_hold_frames = 0
         self.holding = 0
         self.played_ding = False
-        # self.color = "red"
 
     def update_video(self):
         frame = self.vid.get_frame()
@@ -121,10 +119,11 @@ class App:
         self.root.after(self.delay, self.update_video)
 
     def playding(self):
-        playsound("ding.mp3")
+        if not self.played_ding:
+            Thread(target=playsound, args=("ding.mp3",)).start()
         self.played_ding = True
 
-    def detector_main(self): # need to rework this; check for consecutive frames is probably no longer necessary
+    def detector_main(self):  # need to rework this; check for consecutive frames is probably no longer necessary
         hold = self.is_hold()
 
         if hold:
@@ -147,40 +146,18 @@ class App:
         elif self.holding and self.hold_start:
             self.hold_time = time() - self.hold_start
             self.hold_time = round(self.hold_time, 1)
-            # if self.hold_time >= self.hold_goal and not self.played_ding:
-            #     self.playding()
+            if self.hold_time >= self.hold_goal:
+                self.playding()
 
-            # self.color = "red"
-            #
-            # if self.hold_time > self.hold_goal:
-            #     self.color = "green"
-            #
-            self.label_hold_time.configure(text=str(self.hold_time))
+            color = "red"
+
+            if self.hold_time > self.hold_goal:
+                color = "green"
+
+            self.label_hold_time.configure(text=str(self.hold_time), fg=color)
 
         elif not self.holding and self.hold_time:
             self.reset()
-
-    # def calibrate(self): # works, but with issues. status display doesn't update, callibration is questionable
-    #     cal_wait = time()
-    #
-    #     while time() - cal_wait < 3:
-    #         time_til_cal = 5 - (time() - cal_wait)
-    #         self.label_status.configure(text=f"Calibration starting in {round(time_til_cal)} seconds. "
-    #                                          "Please clear the video area.")
-    #
-    #     calibrating = "Calibrating"
-    #     cal_start = time()
-    #     cal_values = []
-    #
-    #     while time() - cal_start < 2:
-    #         cal_values.append(self.get_total_diff())
-    #         self.label_status.configure(text=calibrating)
-    #
-    #     avg_diff = sum(cal_values)/len(cal_values)
-    #     stand_dev = stdev(cal_values)
-    #
-    #     self.thresh = round(avg_diff + stand_dev)
-    #     self.label_status.configure(text=f"Calibrated. Threshold set at {self.thresh}")
 
     def is_hold(self):
         total_diff = self.get_total_diff()
