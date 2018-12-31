@@ -24,6 +24,7 @@ class App:
         self.holding = 0
         self.ding_enabled = tkinter.IntVar()
         self.played_ding = False
+        self.calibrating = False
 
         self.video_source = video_source
 
@@ -33,51 +34,77 @@ class App:
         self.f3 = cv.cvtColor(self.vid.get_frame(), cv.COLOR_BGR2GRAY)
 
         self.display_frame = ttk.Frame(self.root, borderwidth=2, relief="groove")
-        self.display_frame.grid(row=0, column=1)
+        self.display_frame.grid(row=0, column=1, rowspan=2)
         self.display_canvas = tkinter.Canvas(self.display_frame, width=self.vid.in_width, height=self.vid.in_height)
         self.display_canvas.pack()
 
         self.control_frame = ttk.Frame(self.root, padding="10 10 10 10")
         self.control_frame.grid(row=0, column=0, sticky="nw")
-
         self.goal_frame = ttk.Frame(self.control_frame)
-        self.goal_frame.grid(column=0, row=0, sticky="W")
+        self.exit_frame = ttk.Frame(self.root, padding="10 10 10 10")
+        self.exit_frame.grid(row=1, column=0, sticky="SW")
+
+        # main widgets
         self.label_hold_goal = ttk.Label(self.goal_frame, text="Hold goal: ")
         self.input_goal = ttk.Entry(self.goal_frame, width=5)
         self.label_seconds = ttk.Label(self.goal_frame, text=" seconds")
+        self.checkbox_ding = ttk.Checkbutton(self.control_frame, text="Ding for successful hold",
+                                             variable=self.ding_enabled)
+        # self.checkbox_video_out = ttk.Checkbutton(self.control_frame, text="Output video", state="disabled")
+        self.button_detect = ttk.Button(self.control_frame, text="Start detection", command=self.detector_switch)
+        self.button_calibrate = ttk.Button(self.control_frame, text="Calibrate", state="disabled",
+                                           command=self.calibrate_switch)
+        self.button_exit = ttk.Button(self.exit_frame, text="Exit program", command=exit)
+        self.label_status_1 = ttk.Label(self.control_frame, text="")
+        self.label_status_2 = ttk.Label(self.control_frame, text="")
+        self.label_status_3 = ttk.Label(self.control_frame, text="")
+        self.label_hold_time = tkinter.Label(self.control_frame, text="", font=("", 96))
+
+        # calibration widgets
+        #
+
+        self.label_status_1.grid(row=6, column=0, sticky="W")
+        self.label_status_2.grid(row=7, column=0, sticky="W")
+        self.label_status_3.grid(row=8, column=0, sticky="W")
+
+        self.button_exit.grid(row=0, column=0, sticky="SW")
+
+        self.grid_main()
+
+        self.delay = 16
+        self.update()
+
+        self.root.mainloop()
+
+    def grid_main(self):
+        # add code here to forget calibration widgets, if necessary
+
+        # grid main widgets
+        self.goal_frame.grid(column=0, row=0, sticky="W")
         self.label_hold_goal.grid(column=0, row=0, sticky="W")
         self.input_goal.grid(column=1, row=0, sticky="E")
         self.label_seconds.grid(column=2, row=0, sticky="W")
 
-        self.checkbox_ding = ttk.Checkbutton(self.control_frame, text="Ding for successful hold",
-                                             variable=self.ding_enabled)
         self.checkbox_ding.grid(row=1, column=0, sticky="W")
-
-        # self.checkbox_video_out = ttk.Checkbutton(self.control_frame, text="Output video", state="disabled")
         # self.checkbox_video_out.grid(row=2, column=0, sticky="W")
-
-        self.button_detect = ttk.Button(self.control_frame, text="Start detection", command=self.detector_switch)
         self.button_detect.grid(row=3, column=0, sticky="W")
-
-        self.button_calibrate = ttk.Button(self.control_frame, text="Calibrate", state="disabled")
         self.button_calibrate.grid(row=4, column=0, sticky="W")
+        self.label_hold_time.grid(row=5, column=0)
+        pass
 
-        self.button_exit = ttk.Button(self.control_frame, text="Exit program", command=exit)
-        self.button_exit.grid(row=5, column=0, sticky="W")
+    def grid_calibrate(self):
+        # add code here to forget main widgets if necessary
+        # add code here to grid calibration widgets
+        pass
 
-        self.label_status_1 = ttk.Label(self.control_frame, text="")
-        self.label_status_1.grid(row=6, column=0, sticky="W")
+    def calibrate_switch(self):
+        if self.calibrating:
+            self.grid_main()
 
-        self.label_status_2 = ttk.Label(self.control_frame, text="")
-        self.label_status_2.grid(row=7, column=0, sticky="W")
+        else:
+            self.grid_calibrate()
 
-        self.label_hold_time = tkinter.Label(self.control_frame, text="", font=("", 96))
-        self.label_hold_time.grid(row=7, column=0)
-
-        self.delay = 16
-        self.update_video()
-
-        self.root.mainloop()
+        self.calibrating = not self.calibrating
 
     def set_hold_goal(self):
         try:
@@ -104,7 +131,7 @@ class App:
         self.holding = 0
         self.played_ding = False
 
-    def update_video(self):
+    def update(self):
         frame = self.vid.get_frame()
         if frame is None:
             self.detecting = False
@@ -121,7 +148,7 @@ class App:
 
         self.display_canvas.create_image(0, 0, image=self.image, anchor="nw")
 
-        self.root.after(self.delay, self.update_video)
+        self.root.after(self.delay, self.update)
 
     def playding(self):
         if not self.played_ding:
@@ -140,10 +167,12 @@ class App:
         if self.hold_frames == 10:
             self.no_hold_frames = 0
             self.holding = True
+            self.label_status_1.configure(text="Holding")
 
         elif self.no_hold_frames == 5:
             self.hold_frames = 0
             self.holding = False
+            self.label_status_1.configure(text="")
 
         if self.holding and not self.hold_start:
             self.hold_start = time()
@@ -165,9 +194,7 @@ class App:
             self.reset()
 
     def is_hold(self):
-        total_diff = self.get_total_diff()
-        self.label_status_1.configure(text=str(total_diff))
-        return total_diff < self.trigger
+        return self.get_total_diff() < self.trigger
 
     def get_total_diff(self):
         d1 = cv.absdiff(self.f3, self.f2)
