@@ -132,11 +132,11 @@ class App:
         else:
             self.no_hold_frames += 1
 
-        if self.hold_frames == 5:
+        if self.hold_frames == 10:
             self.no_hold_frames = 0
             self.holding = True
 
-        elif self.no_hold_frames == 5:
+        elif self.no_hold_frames == 10:
             self.hold_frames = 0
             self.holding = False
 
