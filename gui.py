@@ -8,21 +8,22 @@ from playsound import playsound
 from threading import Thread
 
 
+# noinspection PyBroadException
 class App:
     def __init__(self, root, window_title, video_source=0):
         self.root = root
         self.root.title(window_title)
         self.detecting = False
         self.image = None
-        self.thresh = 500
+        self.trigger = 500
         self.hold_goal = 0
         self.hold_start = 0
         self.hold_time = 0
         self.hold_frames = 0
         self.no_hold_frames = 0
         self.holding = 0
+        self.ding_enabled = tkinter.IntVar()
         self.played_ding = False
-        # self.color = "red"
 
         self.video_source = video_source
 
@@ -48,9 +49,10 @@ class App:
         self.input_goal.grid(column=1, row=0, sticky="E")
         self.label_seconds.grid(column=2, row=0, sticky="W")
 
-        # self.checkbox_ding = ttk.Checkbutton(self.control_frame, text="Ding for successful hold", state="disabled")
-        # self.checkbox_ding.grid(row=1, column=0, sticky="W")
-        #
+        self.checkbox_ding = ttk.Checkbutton(self.control_frame, text="Ding for successful hold",
+                                             variable=self.ding_enabled)
+        self.checkbox_ding.grid(row=1, column=0, sticky="W")
+
         # self.checkbox_video_out = ttk.Checkbutton(self.control_frame, text="Output video", state="disabled")
         # self.checkbox_video_out.grid(row=2, column=0, sticky="W")
 
@@ -63,8 +65,11 @@ class App:
         self.button_exit = ttk.Button(self.control_frame, text="Exit program", command=exit)
         self.button_exit.grid(row=5, column=0, sticky="W")
 
-        self.label_status = ttk.Label(self.control_frame, text="")
-        self.label_status.grid(row=6, column=0, sticky="W")
+        self.label_status_1 = ttk.Label(self.control_frame, text="")
+        self.label_status_1.grid(row=6, column=0, sticky="W")
+
+        self.label_status_2 = ttk.Label(self.control_frame, text="")
+        self.label_status_2.grid(row=7, column=0, sticky="W")
 
         self.label_hold_time = tkinter.Label(self.control_frame, text="", font=("", 96))
         self.label_hold_time.grid(row=7, column=0)
@@ -123,7 +128,7 @@ class App:
             Thread(target=playsound, args=("ding.mp3",)).start()
         self.played_ding = True
 
-    def detector_main(self):  # need to rework this; check for consecutive frames is probably no longer necessary
+    def detector_main(self):
         hold = self.is_hold()
 
         if hold:
@@ -136,7 +141,7 @@ class App:
             self.no_hold_frames = 0
             self.holding = True
 
-        elif self.no_hold_frames == 10:
+        elif self.no_hold_frames == 5:
             self.hold_frames = 0
             self.holding = False
 
@@ -146,7 +151,7 @@ class App:
         elif self.holding and self.hold_start:
             self.hold_time = time() - self.hold_start
             self.hold_time = round(self.hold_time, 1)
-            if self.hold_time >= self.hold_goal:
+            if self.hold_time >= self.hold_goal and self.ding_enabled.get():
                 self.playding()
 
             color = "red"
@@ -161,8 +166,8 @@ class App:
 
     def is_hold(self):
         total_diff = self.get_total_diff()
-        self.label_status.configure(text=str(total_diff))
-        return total_diff < self.thresh
+        self.label_status_1.configure(text=str(total_diff))
+        return total_diff < self.trigger
 
     def get_total_diff(self):
         d1 = cv.absdiff(self.f3, self.f2)
