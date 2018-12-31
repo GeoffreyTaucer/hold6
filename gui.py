@@ -48,11 +48,11 @@ class App:
         self.input_goal.grid(column=1, row=0, sticky="E")
         self.label_seconds.grid(column=2, row=0, sticky="W")
 
-        self.checkbox_ding = ttk.Checkbutton(self.control_frame, text="Ding for successful hold", state="disabled")
-        self.checkbox_ding.grid(row=1, column=0, sticky="W")
-
-        self.checkbox_video_out = ttk.Checkbutton(self.control_frame, text="Output video", state="disabled")
-        self.checkbox_video_out.grid(row=2, column=0, sticky="W")
+        # self.checkbox_ding = ttk.Checkbutton(self.control_frame, text="Ding for successful hold", state="disabled")
+        # self.checkbox_ding.grid(row=1, column=0, sticky="W")
+        #
+        # self.checkbox_video_out = ttk.Checkbutton(self.control_frame, text="Output video", state="disabled")
+        # self.checkbox_video_out.grid(row=2, column=0, sticky="W")
 
         self.button_detect = ttk.Button(self.control_frame, text="Start detection", command=self.detector_switch)
         self.button_detect.grid(row=3, column=0, sticky="W")
