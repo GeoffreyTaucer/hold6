@@ -25,6 +25,8 @@ class App:
         self.ding_enabled = tkinter.IntVar()
         self.played_ding = False
         self.calibrating = False
+        self.has_calibrated = False
+        self.total_diff = 0
 
         self.video_source = video_source
 
@@ -40,11 +42,11 @@ class App:
 
         self.control_frame = ttk.Frame(self.root, padding="10 10 10 10")
         self.control_frame.grid(row=0, column=0, sticky="nw")
-        self.goal_frame = ttk.Frame(self.control_frame)
         self.exit_frame = ttk.Frame(self.root, padding="10 10 10 10")
         self.exit_frame.grid(row=1, column=0, sticky="SW")
 
         # main widgets
+        self.goal_frame = ttk.Frame(self.control_frame)
         self.label_hold_goal = ttk.Label(self.goal_frame, text="Hold goal: ")
         self.input_goal = ttk.Entry(self.goal_frame, width=5)
         self.label_seconds = ttk.Label(self.goal_frame, text=" seconds")
@@ -52,21 +54,45 @@ class App:
                                              variable=self.ding_enabled)
         # self.checkbox_video_out = ttk.Checkbutton(self.control_frame, text="Output video", state="disabled")
         self.button_detect = ttk.Button(self.control_frame, text="Start detection", command=self.detector_switch)
-        self.button_calibrate = ttk.Button(self.control_frame, text="Calibrate", state="disabled",
+        self.button_calibrate = ttk.Button(self.control_frame, text="Calibrate",
                                            command=self.calibrate_switch)
         self.button_exit = ttk.Button(self.exit_frame, text="Exit program", command=exit)
-        self.label_status_1 = ttk.Label(self.control_frame, text="")
-        self.label_status_2 = ttk.Label(self.control_frame, text="")
-        self.label_status_3 = ttk.Label(self.control_frame, text="")
+        self.label_info = ttk.Label(self.control_frame, text="", wraplength=150)
+        self.label_holding = ttk.Label(self.control_frame, text="")
         self.label_hold_time = tkinter.Label(self.control_frame, text="", font=("", 96))
+        self.main_widgets = [self.goal_frame, self.label_hold_goal, self.input_goal, self.label_seconds,
+                             self.checkbox_ding, self.button_detect, self.button_calibrate]
 
         # calibration widgets
-        #
+        self.movement_thresh_frame = ttk.Frame(self.control_frame, padding="10 10 10 10")
+        self.label_movement_thresh = ttk.Label(self.movement_thresh_frame, text="Motion thresh")
+        self.input_movement_thresh = ttk.Entry(self.movement_thresh_frame, width=4)
+        self.move_thresh_infotext = "Should be between 0 and 255. This determines the threshold for what counts as " \
+                                    "movement. Look for the lowest value where Total Difference stays at 0 when " \
+                                    "there is no movement."
+        self.movement_thresh_frame.bind("<Enter>", lambda _: self.show_info(self.move_thresh_infotext))
+        self.movement_thresh_frame.bind("<Leave>", lambda _: self.show_info(""))
 
-        self.label_status_1.grid(row=6, column=0, sticky="W")
-        self.label_status_2.grid(row=7, column=0, sticky="W")
-        self.label_status_3.grid(row=8, column=0, sticky="W")
+        self.area_thresh_frame = ttk.Frame(self.control_frame, padding="10 10 10 10")
+        self.label_area_thresh = ttk.Label(self.area_thresh_frame, text="Area thresh")
+        self.input_area_thresh = ttk.Entry(self.area_thresh_frame, width=8)
+        self.area_thresh_infotext = "This determines how much movement is acceptable without breaking the hold, " \
+                                    "and can be used to ignore small movements. Total Difference should be below " \
+                                    "this number while the athlete is still, and above this number while the " \
+                                    "athlete is moving."
+        self.area_thresh_frame.bind("<Enter>", lambda _: self.show_info(self.area_thresh_infotext))
+        self.area_thresh_frame.bind("<Leave>", lambda _: self.show_info(""))
 
+        self.label_total_diff = ttk.Label(self.control_frame, text=f"Total Difference: {self.get_total_diff()}")
+
+        self.button_exit_calibration = ttk.Button(self.control_frame, text="Exit Calibration",
+                                                  command=self.calibrate_switch)
+
+        self.calibration_widgets = [self.movement_thresh_frame, self.label_movement_thresh, self.input_movement_thresh,
+                                    self.area_thresh_frame, self.label_area_thresh, self.input_area_thresh,
+                                    self.label_total_diff, self.button_exit_calibration]
+
+        self.label_info.grid(row=5, column=0, sticky="W")
         self.button_exit.grid(row=0, column=0, sticky="SW")
 
         self.grid_main()
@@ -76,26 +102,41 @@ class App:
 
         self.root.mainloop()
 
+    def show_info(self, text):
+        self.label_info.configure(text=text)
+
     def grid_main(self):
-        # add code here to forget calibration widgets, if necessary
+        if self.has_calibrated:
+            for widget in self.calibration_widgets:
+                widget.grid_forget()
 
         # grid main widgets
         self.goal_frame.grid(column=0, row=0, sticky="W")
         self.label_hold_goal.grid(column=0, row=0, sticky="W")
         self.input_goal.grid(column=1, row=0, sticky="E")
         self.label_seconds.grid(column=2, row=0, sticky="W")
-
         self.checkbox_ding.grid(row=1, column=0, sticky="W")
         # self.checkbox_video_out.grid(row=2, column=0, sticky="W")
         self.button_detect.grid(row=3, column=0, sticky="W")
         self.button_calibrate.grid(row=4, column=0, sticky="W")
-        self.label_hold_time.grid(row=5, column=0)
-        pass
+        self.label_hold_time.grid(row=6, column=0)
 
     def grid_calibrate(self):
-        # add code here to forget main widgets if necessary
+        for widget in self.main_widgets:
+            widget.grid_forget()
+
         # add code here to grid calibration widgets
-        pass
+        self.movement_thresh_frame.grid(column=0, row=0, sticky="W")
+        self.label_movement_thresh.grid(column=0, row=0, sticky="W")
+        self.input_movement_thresh.grid(column=1, row=0, sticky="E")
+
+        self.area_thresh_frame.grid(column=0, row=1, sticky="W")
+        self.label_area_thresh.grid(column=0, row=0, sticky="W")
+        self.input_area_thresh.grid(column=1, row=0, sticky="E")
+
+        self.label_total_diff.grid(column=0, row=2)
+
+        self.button_exit_calibration.grid(column=0, row=3, sticky="W")
 
     def calibrate_switch(self):
         if self.calibrating:
@@ -105,6 +146,7 @@ class App:
             self.grid_calibrate()
 
         self.calibrating = not self.calibrating
+        self.has_calibrated = True
 
     def set_hold_goal(self):
         try:
@@ -121,6 +163,8 @@ class App:
 
         else:
             self.button_detect.configure(text="Start detection")
+            self.label_holding.configure(text="")
+            self.label_hold_time.configure(text="")
             self.reset()
 
     def reset(self):
@@ -167,12 +211,12 @@ class App:
         if self.hold_frames == 10:
             self.no_hold_frames = 0
             self.holding = True
-            self.label_status_1.configure(text="Holding")
+            self.label_holding.configure(text="Holding")
 
         elif self.no_hold_frames == 5:
             self.hold_frames = 0
             self.holding = False
-            self.label_status_1.configure(text="")
+            self.label_holding.configure(text="")
 
         if self.holding and not self.hold_start:
             self.hold_start = time()
@@ -180,12 +224,13 @@ class App:
         elif self.holding and self.hold_start:
             self.hold_time = time() - self.hold_start
             self.hold_time = round(self.hold_time, 1)
+
             if self.hold_time >= self.hold_goal and self.ding_enabled.get():
                 self.playding()
 
             color = "red"
 
-            if self.hold_time > self.hold_goal:
+            if self.hold_time >= self.hold_goal:
                 color = "green"
 
             self.label_hold_time.configure(text=str(self.hold_time), fg=color)
@@ -197,7 +242,7 @@ class App:
         return self.get_total_diff() < self.trigger
 
     def get_total_diff(self):
-        d1 = cv.absdiff(self.f3, self.f2)
+        d1 = cv.absdiff(self.f1, self.f2)
         d2 = cv.absdiff(self.f2, self.f3)
         bit_and = cv.bitwise_and(d1, d2)
         _, thresh_bin = cv.threshold(bit_and, 32, 255, cv.THRESH_BINARY)
