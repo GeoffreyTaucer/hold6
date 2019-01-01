@@ -15,7 +15,8 @@ class App:
         self.root.title(window_title)
         self.detecting = False
         self.image = None
-        self.trigger = 500
+        self.move_thresh = 32
+        self.area_thresh = 200
         self.hold_goal = 0
         self.hold_start = 0
         self.hold_time = 0
@@ -54,10 +55,10 @@ class App:
                                              variable=self.ding_enabled)
         # self.checkbox_video_out = ttk.Checkbutton(self.control_frame, text="Output video", state="disabled")
         self.button_detect = ttk.Button(self.control_frame, text="Start detection", command=self.detector_switch)
-        self.button_calibrate = ttk.Button(self.control_frame, text="Calibrate",
+        self.button_calibrate = ttk.Button(self.control_frame, text="Calibrate", state="disabled",
                                            command=self.calibrate_switch)
         self.button_exit = ttk.Button(self.exit_frame, text="Exit program", command=exit)
-        self.label_info = ttk.Label(self.control_frame, text="", wraplength=150)
+        self.label_info = ttk.Label(self.control_frame, text="", wraplength=145)
         self.label_holding = ttk.Label(self.control_frame, text="")
         self.label_hold_time = tkinter.Label(self.control_frame, text="", font=("", 96))
         self.main_widgets = [self.goal_frame, self.label_hold_goal, self.input_goal, self.label_seconds,
@@ -69,7 +70,7 @@ class App:
         self.input_movement_thresh = ttk.Entry(self.movement_thresh_frame, width=4)
         self.move_thresh_infotext = "Should be between 0 and 255. This determines the threshold for what counts as " \
                                     "movement. Look for the lowest value where Total Difference stays at 0 when " \
-                                    "there is no movement."
+                                    "there is no movement. Default value is 40"
         self.movement_thresh_frame.bind("<Enter>", lambda _: self.show_info(self.move_thresh_infotext))
         self.movement_thresh_frame.bind("<Leave>", lambda _: self.show_info(""))
 
@@ -79,18 +80,20 @@ class App:
         self.area_thresh_infotext = "This determines how much movement is acceptable without breaking the hold, " \
                                     "and can be used to ignore small movements. Total Difference should be below " \
                                     "this number while the athlete is still, and above this number while the " \
-                                    "athlete is moving."
+                                    "athlete is moving. Default value is 300."
         self.area_thresh_frame.bind("<Enter>", lambda _: self.show_info(self.area_thresh_infotext))
         self.area_thresh_frame.bind("<Leave>", lambda _: self.show_info(""))
 
+        self.button_apply_vals = ttk.Button(self.control_frame, text="Apply", command=self.apply_cal_vals())
+
         self.label_total_diff = ttk.Label(self.control_frame, text=f"Total Difference: {self.get_total_diff()}")
 
-        self.button_exit_calibration = ttk.Button(self.control_frame, text="Exit Calibration",
+        self.button_exit_calibration = ttk.Button(self.control_frame, text="Return",
                                                   command=self.calibrate_switch)
 
         self.calibration_widgets = [self.movement_thresh_frame, self.label_movement_thresh, self.input_movement_thresh,
                                     self.area_thresh_frame, self.label_area_thresh, self.input_area_thresh,
-                                    self.label_total_diff, self.button_exit_calibration]
+                                    self.label_total_diff, self.button_apply_vals, self.button_exit_calibration]
 
         self.label_info.grid(row=5, column=0, sticky="W")
         self.button_exit.grid(row=0, column=0, sticky="SW")
@@ -134,9 +137,33 @@ class App:
         self.label_area_thresh.grid(column=0, row=0, sticky="W")
         self.input_area_thresh.grid(column=1, row=0, sticky="E")
 
-        self.label_total_diff.grid(column=0, row=2)
+        self.button_apply_vals.grid(column=0, row=2)
 
-        self.button_exit_calibration.grid(column=0, row=3, sticky="W")
+        self.label_total_diff.grid(column=0, row=3)
+
+        self.button_exit_calibration.grid(column=0, row=4, sticky="W")
+
+    def apply_cal_vals(self):
+        self.move_thresh = tkinter.IntVar()
+        self.area_thresh = tkinter.IntVar()
+
+        try:
+            self.move_thresh = int(self.input_movement_thresh.get())
+
+        except Exception:
+            self.move_thresh = 32
+
+        if self.move_thresh < 0 or self.move_thresh > 255:
+            self.move_thresh = 32
+
+        try:
+            self.area_thresh = int(self.input_area_thresh.get())
+
+        except Exception:
+            self.area_thresh = 200
+
+        if self.area_thresh < 0:
+            self.area_thresh = 200
 
     def calibrate_switch(self):
         if self.calibrating:
@@ -190,6 +217,9 @@ class App:
         if self.detecting:
             self.detector_main()
 
+        if self.calibrating:
+            self.label_total_diff.configure(text=f"Total difference: {self.get_total_diff()}")
+
         self.display_canvas.create_image(0, 0, image=self.image, anchor="nw")
 
         self.root.after(self.delay, self.update)
@@ -239,13 +269,13 @@ class App:
             self.reset()
 
     def is_hold(self):
-        return self.get_total_diff() < self.trigger
+        return self.get_total_diff() < self.area_thresh
 
     def get_total_diff(self):
         d1 = cv.absdiff(self.f1, self.f2)
         d2 = cv.absdiff(self.f2, self.f3)
         bit_and = cv.bitwise_and(d1, d2)
-        _, thresh_bin = cv.threshold(bit_and, 32, 255, cv.THRESH_BINARY)
+        _, thresh_bin = cv.threshold(bit_and, self.move_thresh, 255, cv.THRESH_BINARY)
         # cv.imshow("Test", thresh_bin)
         return cv.countNonZero(thresh_bin)
 
