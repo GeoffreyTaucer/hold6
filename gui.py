@@ -57,6 +57,8 @@ class App:
         self.button_detect = ttk.Button(self.control_frame, text="Start detection", command=self.detector_switch)
         self.button_calibrate = ttk.Button(self.control_frame, text="Calibrate", state="disabled",
                                            command=self.calibrate_switch)
+        self.button_calibrate.bind("<Enter>", lambda _: self.show_info("Not yet implemented"))
+        self.button_calibrate.bind("<Leave>", lambda _: self.show_info(""))
         self.button_exit = ttk.Button(self.exit_frame, text="Exit program", command=exit)
         self.label_info = ttk.Label(self.control_frame, text="", wraplength=145)
         self.label_holding = ttk.Label(self.control_frame, text="")
