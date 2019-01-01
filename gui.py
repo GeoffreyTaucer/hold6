@@ -6,6 +6,7 @@ import PIL.ImageTk
 from time import time
 from playsound import playsound
 from threading import Thread
+import sys
 
 
 # noinspection PyBroadException
@@ -59,7 +60,7 @@ class App:
                                            command=self.calibrate_switch)
         self.button_calibrate.bind("<Enter>", lambda _: self.show_info("Not yet implemented"))
         self.button_calibrate.bind("<Leave>", lambda _: self.show_info(""))
-        self.button_exit = ttk.Button(self.exit_frame, text="Exit program", command=exit)
+        self.button_exit = ttk.Button(self.exit_frame, text="Exit program", command=sys.exit)
         self.label_info = ttk.Label(self.control_frame, text="", wraplength=145)
         self.label_holding = ttk.Label(self.control_frame, text="")
         self.label_hold_time = tkinter.Label(self.control_frame, text="", font=("", 96))
