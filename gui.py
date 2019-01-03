@@ -16,8 +16,8 @@ class App:
         self.root.title(window_title)
         self.detecting = False
         self.image = None
-        self.move_thresh = 32
-        self.area_thresh = 200
+        self.move_thresh = 20
+        self.area_thresh = 150
         self.hold_goal = 0
         self.hold_start = 0
         self.hold_time = 0
