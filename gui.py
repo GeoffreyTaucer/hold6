@@ -69,7 +69,7 @@ class App:
 
         # calibration widgets
         self.movement_thresh_frame = ttk.Frame(self.control_frame, padding="10 10 10 10")
-        self.label_movement_thresh = ttk.Label(self.movement_thresh_frame, text="Motion thresh")
+        self.label_movement_thresh = ttk.Label(self.movement_thresh_frame, text="Sensitivity")
         self.input_movement_thresh = ttk.Entry(self.movement_thresh_frame, width=4)
         self.move_thresh_infotext = "Should be between 0 and 255. This determines the threshold for what counts as " \
                                     "movement. Look for the lowest value where Total Difference stays at 0 when " \
@@ -78,11 +78,11 @@ class App:
         self.movement_thresh_frame.bind("<Leave>", lambda _: self.show_info(""))
 
         self.area_thresh_frame = ttk.Frame(self.control_frame, padding="10 10 10 10")
-        self.label_area_thresh = ttk.Label(self.area_thresh_frame, text="Area thresh")
+        self.label_area_thresh = ttk.Label(self.area_thresh_frame, text="Tolerance")
         self.input_area_thresh = ttk.Entry(self.area_thresh_frame, width=8)
         self.area_thresh_infotext = "This determines how much movement is acceptable without breaking the hold, " \
-                                    "and can be used to ignore small movements. Total Difference should be below " \
-                                    "this number while the athlete is still, and above this number while the " \
+                                    "and can be used to ignore small background movements. Total Difference should " \
+                                    "be below this number while the athlete is still, and above this number while the " \
                                     "athlete is moving. Default value is 150."
         self.area_thresh_frame.bind("<Enter>", lambda _: self.show_info(self.area_thresh_infotext))
         self.area_thresh_frame.bind("<Leave>", lambda _: self.show_info(""))
