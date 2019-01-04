@@ -16,7 +16,7 @@ class App:
         self.root.title(window_title)
         self.detecting = False
         self.image = None
-        self.move_thresh = 20
+        self.move_thresh = 32
         self.area_thresh = 150
         self.hold_goal = 0
         self.hold_start = 0
@@ -56,10 +56,10 @@ class App:
                                              variable=self.ding_enabled)
         # self.checkbox_video_out = ttk.Checkbutton(self.control_frame, text="Output video", state="disabled")
         self.button_detect = ttk.Button(self.control_frame, text="Start detection", command=self.detector_switch)
-        self.button_calibrate = ttk.Button(self.control_frame, text="Calibrate", state="disabled",
+        self.button_calibrate = ttk.Button(self.control_frame, text="Calibrate",
                                            command=self.calibrate_switch)
-        self.button_calibrate.bind("<Enter>", lambda _: self.show_info("Not yet implemented"))
-        self.button_calibrate.bind("<Leave>", lambda _: self.show_info(""))
+        # self.button_calibrate.bind("<Enter>", lambda _: self.show_info("Not yet implemented"))
+        # self.button_calibrate.bind("<Leave>", lambda _: self.show_info(""))
         self.button_exit = ttk.Button(self.exit_frame, text="Exit program", command=sys.exit)
         self.label_info = ttk.Label(self.control_frame, text="", wraplength=145)
         self.label_holding = ttk.Label(self.control_frame, text="")
@@ -73,7 +73,7 @@ class App:
         self.input_movement_thresh = ttk.Entry(self.movement_thresh_frame, width=4)
         self.move_thresh_infotext = "Should be between 0 and 255. This determines the threshold for what counts as " \
                                     "movement. Look for the lowest value where Total Difference stays at 0 when " \
-                                    "there is no movement. Default value is 40"
+                                    "there is no movement. Default value is 32"
         self.movement_thresh_frame.bind("<Enter>", lambda _: self.show_info(self.move_thresh_infotext))
         self.movement_thresh_frame.bind("<Leave>", lambda _: self.show_info(""))
 
@@ -83,11 +83,11 @@ class App:
         self.area_thresh_infotext = "This determines how much movement is acceptable without breaking the hold, " \
                                     "and can be used to ignore small movements. Total Difference should be below " \
                                     "this number while the athlete is still, and above this number while the " \
-                                    "athlete is moving. Default value is 300."
+                                    "athlete is moving. Default value is 150."
         self.area_thresh_frame.bind("<Enter>", lambda _: self.show_info(self.area_thresh_infotext))
         self.area_thresh_frame.bind("<Leave>", lambda _: self.show_info(""))
 
-        self.button_apply_vals = ttk.Button(self.control_frame, text="Apply", command=self.apply_cal_vals())
+        self.button_apply_vals = ttk.Button(self.control_frame, text="Apply", command=self.apply_cal_vals)
 
         self.label_total_diff = ttk.Label(self.control_frame, text=f"Total Difference: {self.get_total_diff()}")
 
@@ -241,12 +241,12 @@ class App:
         else:
             self.no_hold_frames += 1
 
-        if self.hold_frames == 10:
+        if self.hold_frames == 15:
             self.no_hold_frames = 0
             self.holding = True
             self.label_holding.configure(text="Holding")
 
-        elif self.no_hold_frames == 5:
+        elif self.no_hold_frames == 3:
             self.hold_frames = 0
             self.holding = False
             self.label_holding.configure(text="")
