@@ -17,8 +17,10 @@ class App:
         self.root.title(window_title)
         self.detecting = False
         self.image = None
-        self.move_thresh = 32
-        self.area_thresh = 150
+        self.move_thresh_default = 24
+        self.area_thresh_default = 150
+        self.move_thresh = self.move_thresh_default
+        self.area_thresh = self.area_thresh_default
         self.hold_goal = 0
         self.hold_start = 0
         self.hold_time = 0
@@ -33,11 +35,11 @@ class App:
 
         self.video_source = video_source
 
-        self.vid = VideoCapture(video_source)
         self.kernel = np.ones((5, 5), np.uint8)
-        self.f1 = cv.morphologyEx(cv.cvtColor(self.vid.get_frame(), cv.COLOR_BGR2GRAY), cv.MORPH_OPEN, self.kernel)
-        self.f2 = cv.morphologyEx(cv.cvtColor(self.vid.get_frame(), cv.COLOR_BGR2GRAY), cv.MORPH_OPEN, self.kernel)
-        self.f3 = cv.morphologyEx(cv.cvtColor(self.vid.get_frame(), cv.COLOR_BGR2GRAY), cv.MORPH_OPEN, self.kernel)
+        self.vid = VideoCapture(video_source)
+        self.f1 = cv.cvtColor(self.vid.get_frame(), cv.COLOR_BGR2GRAY)
+        self.f2 = cv.cvtColor(self.vid.get_frame(), cv.COLOR_BGR2GRAY)
+        self.f3 = cv.cvtColor(self.vid.get_frame(), cv.COLOR_BGR2GRAY)
 
         self.display_frame = ttk.Frame(self.root, borderwidth=2, relief="groove")
         self.display_frame.grid(row=0, column=1, rowspan=2)
@@ -75,7 +77,7 @@ class App:
         self.input_movement_thresh = ttk.Entry(self.movement_thresh_frame, width=4)
         self.move_thresh_infotext = "Should be between 0 and 255. This determines the threshold for what counts as " \
                                     "movement. Look for the lowest value where Total Difference stays at 0 when " \
-                                    "there is no movement. Default value is 32"
+                                    f"there is no movement. Default value is {self.move_thresh_default}"
         self.movement_thresh_frame.bind("<Enter>", lambda _: self.show_info(self.move_thresh_infotext))
         self.movement_thresh_frame.bind("<Leave>", lambda _: self.show_info(""))
 
@@ -85,7 +87,7 @@ class App:
         self.area_thresh_infotext = "This determines how much movement is acceptable without breaking the hold, " \
                                     "and can be used to ignore small background movements. Total Difference should " \
                                     "be below this number while the athlete is still, and above this number while" \
-                                    "the athlete is moving. Default value is 150."
+                                    f"the athlete is moving. Default value is {self.area_thresh_default}."
         self.area_thresh_frame.bind("<Enter>", lambda _: self.show_info(self.area_thresh_infotext))
         self.area_thresh_frame.bind("<Leave>", lambda _: self.show_info(""))
 
@@ -156,19 +158,19 @@ class App:
             self.move_thresh = int(self.input_movement_thresh.get())
 
         except Exception:
-            self.move_thresh = 32
+            self.move_thresh = self.move_thresh_default
 
         if self.move_thresh < 0 or self.move_thresh > 255:
-            self.move_thresh = 32
+            self.move_thresh = self.move_thresh_default
 
         try:
             self.area_thresh = int(self.input_area_thresh.get())
 
         except Exception:
-            self.area_thresh = 200
+            self.area_thresh = self.area_thresh_default
 
         if self.area_thresh < 0:
-            self.area_thresh = 200
+            self.area_thresh = self.area_thresh_default
 
     def calibrate_switch(self):
         if self.calibrating:
@@ -215,7 +217,7 @@ class App:
 
         self.f1 = self.f2
         self.f2 = self.f3
-        self.f3 = cv.morphologyEx(cv.cvtColor(frame, cv.COLOR_BGR2GRAY), cv.MORPH_OPEN, self.kernel)
+        self.f3 = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
         self.image = PIL.ImageTk.PhotoImage(image=PIL.Image.fromarray(frame))
 
@@ -277,8 +279,8 @@ class App:
         return self.get_total_diff() < self.area_thresh
 
     def get_total_diff(self):
-        d1 = cv.absdiff(self.f1, self.f2)
-        d2 = cv.absdiff(self.f2, self.f3)
+        d1 = cv.morphologyEx(cv.absdiff(self.f1, self.f2), cv.MORPH_OPEN, self.kernel)
+        d2 = cv.morphologyEx(cv.absdiff(self.f2, self.f3), cv.MORPH_OPEN, self.kernel)
         bit_and = cv.bitwise_and(d1, d2)
         _, thresh_bin = cv.threshold(bit_and, self.move_thresh, 255, cv.THRESH_BINARY)
         # cv.imshow("Test", thresh_bin)
