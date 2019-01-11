@@ -3,6 +3,7 @@ from tkinter import ttk
 import cv2 as cv
 import PIL.Image
 import PIL.ImageTk
+import numpy as np
 from time import time
 from playsound import playsound
 from threading import Thread
@@ -33,9 +34,10 @@ class App:
         self.video_source = video_source
 
         self.vid = VideoCapture(video_source)
-        self.f1 = cv.cvtColor(self.vid.get_frame(), cv.COLOR_BGR2GRAY)
-        self.f2 = cv.cvtColor(self.vid.get_frame(), cv.COLOR_BGR2GRAY)
-        self.f3 = cv.cvtColor(self.vid.get_frame(), cv.COLOR_BGR2GRAY)
+        self.kernel = np.ones((5, 5), np.uint8)
+        self.f1 = cv.morphologyEx(cv.cvtColor(self.vid.get_frame(), cv.COLOR_BGR2GRAY), cv.MORPH_OPEN, self.kernel)
+        self.f2 = cv.morphologyEx(cv.cvtColor(self.vid.get_frame(), cv.COLOR_BGR2GRAY), cv.MORPH_OPEN, self.kernel)
+        self.f3 = cv.morphologyEx(cv.cvtColor(self.vid.get_frame(), cv.COLOR_BGR2GRAY), cv.MORPH_OPEN, self.kernel)
 
         self.display_frame = ttk.Frame(self.root, borderwidth=2, relief="groove")
         self.display_frame.grid(row=0, column=1, rowspan=2)
@@ -82,8 +84,8 @@ class App:
         self.input_area_thresh = ttk.Entry(self.area_thresh_frame, width=8)
         self.area_thresh_infotext = "This determines how much movement is acceptable without breaking the hold, " \
                                     "and can be used to ignore small background movements. Total Difference should " \
-                                    "be below this number while the athlete is still, and above this number while the " \
-                                    "athlete is moving. Default value is 150."
+                                    "be below this number while the athlete is still, and above this number while" \
+                                    "the athlete is moving. Default value is 150."
         self.area_thresh_frame.bind("<Enter>", lambda _: self.show_info(self.area_thresh_infotext))
         self.area_thresh_frame.bind("<Leave>", lambda _: self.show_info(""))
 
@@ -213,7 +215,7 @@ class App:
 
         self.f1 = self.f2
         self.f2 = self.f3
-        self.f3 = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        self.f3 = cv.morphologyEx(cv.cvtColor(frame, cv.COLOR_BGR2GRAY), cv.MORPH_OPEN, self.kernel)
 
         self.image = PIL.ImageTk.PhotoImage(image=PIL.Image.fromarray(frame))
 
