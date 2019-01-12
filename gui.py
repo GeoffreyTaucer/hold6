@@ -17,7 +17,7 @@ class App:
         self.root.title(window_title)
         self.detecting = False
         self.image = None
-        self.move_thresh_default = 24
+        self.move_thresh_default = 10
         self.area_thresh_default = 150
         self.move_thresh = self.move_thresh_default
         self.area_thresh = self.area_thresh_default
@@ -35,7 +35,7 @@ class App:
 
         self.video_source = video_source
 
-        self.kernel = np.ones((5, 5), np.uint8)
+        self.kernel = np.ones((10, 10), np.uint8)
         self.vid = VideoCapture(video_source)
         self.f1 = cv.cvtColor(self.vid.get_frame(), cv.COLOR_BGR2GRAY)
         self.f2 = cv.cvtColor(self.vid.get_frame(), cv.COLOR_BGR2GRAY)
@@ -135,7 +135,6 @@ class App:
         for widget in self.main_widgets:
             widget.grid_forget()
 
-        # add code here to grid calibration widgets
         self.movement_thresh_frame.grid(column=0, row=0, sticky="W")
         self.label_movement_thresh.grid(column=0, row=0, sticky="W")
         self.input_movement_thresh.grid(column=1, row=0, sticky="E")
@@ -283,7 +282,7 @@ class App:
         d2 = cv.morphologyEx(cv.absdiff(self.f2, self.f3), cv.MORPH_OPEN, self.kernel)
         bit_and = cv.bitwise_and(d1, d2)
         _, thresh_bin = cv.threshold(bit_and, self.move_thresh, 255, cv.THRESH_BINARY)
-        # cv.imshow("Test", thresh_bin)
+        cv.imshow("Test", thresh_bin)
         return cv.countNonZero(thresh_bin)
 
     def add_overlay(self):
